@@ -153,14 +153,14 @@ func Start() {
 		Types: []goslot.SymbolType{goslot.REGULAR, goslot.REGULAR,
 			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
 			goslot.REGULAR, goslot.WILD},
+		OutputFile: fmt.Sprintf("model-classic-%s.txt", now()),
 	}
 	conf.Validate()
 	model := NewModel(conf, paylines, paytable)
 	gen := goslot.NewGenerator(conf, model)
 	gen.Start()
-	filename := fmt.Sprintf("model-classic-%s.txt", now())
 	data := []byte(goslot.ChromosomeString(gen.GetBestChromosome(), conf.Symbols))
-	if err := ioutil.WriteFile(filename, data, os.ModePerm); err != nil {
+	if err := ioutil.WriteFile(conf.OutputFile, data, os.ModeAppend); err != nil {
 		panic(err)
 	}
 }

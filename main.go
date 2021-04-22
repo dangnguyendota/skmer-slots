@@ -12,6 +12,7 @@ var cc = flag.Bool("chinese", false, "")
 var fb = flag.Bool("football", false, "")
 
 func main() {
+	flag.Parse()
 	if *cs {
 		classic.Start()
 	} else if *cc {
