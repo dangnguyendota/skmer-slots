@@ -86,6 +86,18 @@ func (m *Model) Win(machine *goslot.SlotMachine) int {
 	return win
 }
 
+func (m *Model) Jackpot(machine *goslot.SlotMachine) bool {
+	Loop: for _, payLine := range m.paylines {
+		for i := 0; i < m.conf.ColsSize; i++ {
+			if m.conf.Types[machine.Reels()[i][(machine.Stops()[i]+payLine[i])%m.conf.ReelSize]] != goslot.WILD {
+				continue Loop
+			}
+		}
+		return true
+	}
+	return false
+}
+
 func (m *Model) Scatters(machine *goslot.SlotMachine) int {
 	return 0
 }
@@ -97,14 +109,8 @@ func (m *Model) Bonus(machine *goslot.SlotMachine) int {
 func (m *Model) Result(machine *goslot.SlotMachine) []float64 {
 	result := make([]float64, 2)
 	result[0] += float64(m.Win(machine))
-	Loop: for i := 0; i < m.conf.ColsSize; i++ {
-		for j := 0; j < m.conf.RowsSize; j++ {
-			if m.conf.Types[machine.Reels()[i][j]] != goslot.WILD {
-				continue Loop
-			}
-		}
+	if m.Jackpot(machine) {
 		result[1] += 1
-		break
 	}
 	return result
 }

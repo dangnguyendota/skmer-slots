@@ -19,6 +19,8 @@ func main() {
 		chinese_carnival.Start()
 	} else if *fb {
 		football.Start()
+	} else {
+		classic.Start()
 	}
 
 }
