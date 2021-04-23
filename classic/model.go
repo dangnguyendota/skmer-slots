@@ -106,6 +106,7 @@ func (m *Model) Bonus(machine *goslot.SlotMachine) int {
 	return 0
 }
 
+// RTP, Jackpot
 func (m *Model) Result(machine *goslot.SlotMachine) []float64 {
 	result := make([]float64, 2)
 	result[0] += float64(m.Win(machine)) / float64(len(m.paylines))

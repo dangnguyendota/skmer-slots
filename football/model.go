@@ -120,45 +120,69 @@ func (m *Model) Bonus(machine *goslot.SlotMachine) int {
 	return counter
 }
 
+// RTP, Jackpot, 3 Free spins, 4 Free Spins, 5 Free spins
 func (m *Model) Result(machine *goslot.SlotMachine) []float64 {
-	result := make([]float64, 2)
+	result := make([]float64, 5)
 	result[0] += float64(m.Win(machine)) / float64(len(m.paylines))
 	if m.Jackpot(machine) {
 		result[1] += 1
+	}
+	bonus := m.Bonus(machine)
+	switch bonus {
+	case 0:
+	case 1:
+	case 2:
+	case 3:
+		result[2]++
+	case 4:
+		result[3]++
+	case 5:
+		result[4]++
+	default:
+		// nếu nhiều hơn 5 bonus trên 1 màn hình thì penalty
+		result[0] += goslot.InvalidReelsPenalty
 	}
 	return result
 }
 
 var paylines = [][]int{
-	{0, 0, 0},
-	{1, 1, 1},
-	{2, 2, 2},
-	{0, 1, 0},
-	{2, 1, 2},
-	{1, 0, 1},
-	{1, 2, 1},
-	{0, 2, 0},
-	{2, 0, 2},
-	{0, 1, 2},
-	{2, 1, 0},
-	{0, 0, 1},
-	{1, 1, 2},
-	{1, 1, 0},
-	{2, 2, 1},
-	{1, 0, 0},
-	{2, 1, 1},
-	{0, 1, 1},
-	{1, 2, 2},
-	{0, 2, 1},
+	{0, 0, 0, 0, 0},
+	{1, 1, 1, 1, 1},
+	{2, 2, 2, 2, 2},
+	{1, 2, 2, 2, 1},
+	{1, 0, 1, 2, 1},
+	{0, 0, 2, 0, 0},
+	{2, 2, 0, 2, 2},
+	{0, 1, 2, 1, 0},
+	{0, 1, 1, 1, 0},
+	{0, 1, 0, 1, 0},
+	{0, 2, 2, 2, 0},
+	{2, 0, 0, 0, 2},
+	{2, 1, 0, 1, 2},
+	{0, 0, 1, 2, 2},
+	{2, 1, 2, 1, 2},
+	{1, 2, 0, 2, 1},
+	{2, 1, 1, 1, 2},
+	{1, 2, 1, 0, 1},
+	{1, 1, 2, 1, 1},
+	{0, 2, 0, 2, 0},
+	{2, 0, 2, 0, 2},
+	{1, 0, 0, 0, 1},
+	{2, 2, 1, 0, 0},
+	{1, 1, 0, 1, 1},
+	{1, 0, 2, 0, 1},
 }
 
 var paytable = [][]int{
-	{0, 0, 0, 0, 0, 0, 0, 0},
-	{0, 0, 0, 0, 0, 0, 0, 0},
-	{0, 0, 0, 0, 0, 0, 0, 0},
-	{1000, 300, 100, 50, 20, 10, 5, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{15, 10, 10, 7, 7, 6, 5, 5, 0, 0},
+	{30, 20, 20, 15, 15, 12, 10, 10, 0, 0},
+	{75, 50, 50, 25, 25, 20, 15, 15, 0, 0},
 }
 
+// tiền thưởng khi ăn [0, 1, 2, 3, 4, 5] WILD trên 1 pay line
 var wild = []int{0, 0, 0, 25, 40, 0}
 
 func Start() {
@@ -170,7 +194,7 @@ func Start() {
 		LocalPopulationSize:     37,
 		LocalOptimizationEpochs: 100,
 		NumberOfLifeCircle:      67,
-		Targets:                 []float64{0.6, 0.000015},
+		Targets:                 []float64{0.6, 0.000015, 0.02, 0.01, 0.005},
 		Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "H", "WILD", "FREE SPIN"},
 		Types: []goslot.SymbolType{
 			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
