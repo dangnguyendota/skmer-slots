@@ -122,7 +122,7 @@ func (m *Model) Bonus(machine *goslot.SlotMachine) int {
 
 func (m *Model) Result(machine *goslot.SlotMachine) []float64 {
 	result := make([]float64, 2)
-	result[0] += float64(m.Win(machine))
+	result[0] += float64(m.Win(machine)) / float64(len(m.paylines))
 	if m.Jackpot(machine) {
 		result[1] += 1
 	}
@@ -172,9 +172,10 @@ func Start() {
 		NumberOfLifeCircle:      67,
 		Targets:                 []float64{0.6, 0.000015},
 		Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "H", "WILD", "FREE SPIN"},
-		Types: []goslot.SymbolType{goslot.REGULAR, goslot.REGULAR,
-			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
-			goslot.REGULAR, goslot.WILD},
+		Types: []goslot.SymbolType{
+			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
+			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
+			goslot.REGULAR, goslot.REGULAR, goslot.WILD, goslot.BONUS},
 		OutputFile: fmt.Sprintf("model-classic-%s.txt", now()),
 	}
 	conf.Validate()
