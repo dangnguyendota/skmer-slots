@@ -3,8 +3,6 @@ package classic
 import (
 	"fmt"
 	"github.com/dangnguyendota/goslot"
-	"io/ioutil"
-	"os"
 	"time"
 )
 
@@ -172,7 +170,7 @@ func Start() {
 	gen := goslot.NewGenerator(conf, model)
 	gen.Start()
 	data := []byte(goslot.ChromosomeString(gen.GetBestChromosome(), conf.Symbols))
-	if err := ioutil.WriteFile(conf.OutputFile, data, os.ModeAppend | os.ModePerm); err != nil {
+	if err := gen.WriteFile(data); err != nil {
 		panic(err)
 	}
 }
