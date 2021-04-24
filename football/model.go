@@ -199,13 +199,6 @@ func Start() {
 			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
 			goslot.REGULAR, goslot.REGULAR, goslot.WILD, goslot.BONUS},
 		OutputFile:                 fmt.Sprintf("model-football-%s.txt", now()),
-		MinimumRequiredSymbolCount: [][]int{
-			{2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-			{2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-			{2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-			{2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-			{2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-		},
 	}
 	conf.Validate()
 	model := NewModel(conf, paylines, paytable, wild)

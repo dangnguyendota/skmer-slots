@@ -96,6 +96,18 @@ func (m *Model) Jackpot(machine *goslot.SlotMachine) bool {
 	return false
 }
 
+func (m *Model) IsInvalid(machine *goslot.SlotMachine) bool {
+	Loop: for i := 0; i < m.conf.ColsSize; i++ {
+		for j := 0; j < m.conf.ReelSize; j++ {
+			if m.conf.Types[machine.Reels()[i][j]] == goslot.WILD {
+				continue Loop
+			}
+		}
+		return true
+	}
+	return false
+}
+
 func (m *Model) Scatters(machine *goslot.SlotMachine) int {
 	return 0
 }
@@ -107,6 +119,9 @@ func (m *Model) Bonus(machine *goslot.SlotMachine) int {
 // RTP, Jackpot
 func (m *Model) Result(machine *goslot.SlotMachine) []float64 {
 	result := make([]float64, 2)
+	if m.IsInvalid(machine) {
+		return []float64{goslot.InvalidReelsPenalty, goslot.InvalidReelsPenalty}
+	}
 	result[0] += float64(m.Win(machine)) / float64(len(m.paylines))
 	if m.Jackpot(machine) {
 		result[1] += 1
@@ -159,11 +174,6 @@ func Start() {
 			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
 			goslot.REGULAR, goslot.WILD},
 		OutputFile:                 fmt.Sprintf("model-classic-%s.txt", now()),
-		MinimumRequiredSymbolCount: [][]int{
-			{1, 1, 1, 1, 1, 1, 1, 1},
-			{1, 1, 1, 1, 1, 1, 1, 1},
-			{1, 1, 1, 1, 1, 1, 1, 1},
-		},
 	}
 	conf.Validate()
 	model := NewModel(conf, paylines, paytable)
