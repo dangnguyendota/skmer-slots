@@ -188,19 +188,26 @@ var wild = []int{0, 0, 0, 25, 40, 0}
 func Start() {
 	conf := &goslot.Conf{
 		ColsSize:                5,
-		ReelSize:                40,
+		ReelSize:                60,
 		RowsSize:                3,
-		NumberOfNodes:           50,
+		NumberOfNodes:           5,
 		LocalPopulationSize:     37,
 		LocalOptimizationEpochs: 100,
 		NumberOfLifeCircle:      67,
-		Targets:                 []float64{0.6, 0.000015, 0.02, 0.01, 0.005},
+		Targets:                 []float64{0.7, 0.0001, 0.02, 0.01, 0.005},
 		Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "H", "WILD", "FREE SPIN"},
 		Types: []goslot.SymbolType{
 			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
 			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
 			goslot.REGULAR, goslot.REGULAR, goslot.WILD, goslot.BONUS},
-		OutputFile: fmt.Sprintf("model-classic-%s.txt", now()),
+		OutputFile:                 fmt.Sprintf("model-football-%s.txt", now()),
+		MinimumRequiredSymbolCount: [][]int{
+			{2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+			{2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+			{2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+			{2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+			{2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+		},
 	}
 	conf.Validate()
 	model := NewModel(conf, paylines, paytable, wild)

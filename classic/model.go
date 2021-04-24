@@ -149,18 +149,23 @@ var paytable = [][]int{
 func Start() {
 	conf := &goslot.Conf{
 		ColsSize:                3,
-		ReelSize:                40,
+		ReelSize:                50,
 		RowsSize:                3,
-		NumberOfNodes:           50,
+		NumberOfNodes:           5,
 		LocalPopulationSize:     37,
 		LocalOptimizationEpochs: 100,
 		NumberOfLifeCircle:      67,
-		Targets:                 []float64{0.6, 0.000015},
+		Targets:                 []float64{0.9, 0.001},
 		Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "WILD"},
 		Types: []goslot.SymbolType{goslot.REGULAR, goslot.REGULAR,
 			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
 			goslot.REGULAR, goslot.WILD},
-		OutputFile: fmt.Sprintf("model-classic-%s.txt", now()),
+		OutputFile:                 fmt.Sprintf("model-classic-%s.txt", now()),
+		MinimumRequiredSymbolCount: [][]int{
+			{1, 1, 1, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1, 1, 1},
+			{1, 1, 1, 1, 1, 1, 1, 1},
+		},
 	}
 	conf.Validate()
 	model := NewModel(conf, paylines, paytable)
