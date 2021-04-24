@@ -118,8 +118,34 @@ func (m *Model) Bonus(machine *goslot.SlotMachine) int {
 	return counter
 }
 
+func (m *Model) IsInvalid(machine *goslot.SlotMachine) bool {
+Loop1:
+	for i := 0; i < m.conf.ColsSize; i++ {
+		for j := 0; j < m.conf.ReelSize; j++ {
+			if m.conf.Types[machine.Reels()[i][j]] == goslot.WILD {
+				continue Loop1
+			}
+		}
+		return true
+	}
+Loop2:
+	for i := 0; i < m.conf.ColsSize; i++ {
+		for j := 0; j < m.conf.ReelSize; j++ {
+			if m.conf.Types[machine.Reels()[i][j]] == goslot.BONUS {
+				continue Loop2
+			}
+		}
+		return true
+	}
+	return false
+}
+
 // RTP, Jackpot, 3 Free spins, 4 Free Spins, 5 Free spins
 func (m *Model) Result(machine *goslot.SlotMachine) []float64 {
+	if m.IsInvalid(machine) {
+		return []float64{goslot.InvalidReelsPenalty, goslot.InvalidReelsPenalty,
+			goslot.InvalidReelsPenalty, goslot.InvalidReelsPenalty, goslot.InvalidReelsPenalty}
+	}
 	result := make([]float64, 5)
 	result[0] += float64(m.Win(machine)) / float64(len(m.paylines))
 	if m.Jackpot(machine) {
@@ -189,16 +215,16 @@ func Start() {
 		ReelSize:                60,
 		RowsSize:                3,
 		NumberOfNodes:           5,
-		LocalPopulationSize:     37,
-		LocalOptimizationEpochs: 100,
-		NumberOfLifeCircle:      67,
+		LocalPopulationSize:     3,
+		LocalOptimizationEpochs: 5,
+		NumberOfLifeCircle:      11,
 		Targets:                 []float64{0.7, 0.0001, 0.02, 0.01, 0.005},
 		Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "H", "WILD", "FREE SPIN"},
 		Types: []goslot.SymbolType{
 			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
 			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
 			goslot.REGULAR, goslot.REGULAR, goslot.WILD, goslot.BONUS},
-		OutputFile:                 fmt.Sprintf("model-football-%s.txt", now()),
+		OutputFile: fmt.Sprintf("model-football-%s.txt", now()),
 	}
 	conf.Validate()
 	model := NewModel(conf, paylines, paytable, wild)
