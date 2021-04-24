@@ -20,7 +20,7 @@ func main() {
 	} else if *fb {
 		football.Start()
 	} else {
-		classic.Start()
+		football.Start()
 	}
 
 }

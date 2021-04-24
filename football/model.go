@@ -119,23 +119,19 @@ func (m *Model) Bonus(machine *goslot.SlotMachine) int {
 }
 
 func (m *Model) IsInvalid(machine *goslot.SlotMachine) bool {
-Loop1:
 	for i := 0; i < m.conf.ColsSize; i++ {
+		counter := make([]int, len(m.conf.Symbols))
 		for j := 0; j < m.conf.ReelSize; j++ {
-			if m.conf.Types[machine.Reels()[i][j]] == goslot.WILD {
-				continue Loop1
+			counter[machine.Reels()[i][j]]++
+		}
+		for j, count := range counter {
+			if count == 0 {
+				return true
+			}
+			if m.conf.Types[j] == goslot.WILD && count < 2 {
+				return true
 			}
 		}
-		return true
-	}
-Loop2:
-	for i := 0; i < m.conf.ColsSize; i++ {
-		for j := 0; j < m.conf.ReelSize; j++ {
-			if m.conf.Types[machine.Reels()[i][j]] == goslot.BONUS {
-				continue Loop2
-			}
-		}
-		return true
 	}
 	return false
 }
@@ -212,11 +208,11 @@ var wild = []int{0, 0, 0, 25, 40, 0}
 func Start() {
 	conf := &goslot.Conf{
 		ColsSize:                5,
-		ReelSize:                60,
+		ReelSize:                20,
 		RowsSize:                3,
 		NumberOfNodes:           5,
-		LocalPopulationSize:     3,
-		LocalOptimizationEpochs: 5,
+		LocalPopulationSize:     10,
+		LocalOptimizationEpochs: 20,
 		NumberOfLifeCircle:      11,
 		Targets:                 []float64{0.7, 0.0001, 0.02, 0.01, 0.005},
 		Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "H", "WILD", "FREE SPIN"},

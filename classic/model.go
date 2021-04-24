@@ -97,13 +97,19 @@ func (m *Model) Jackpot(machine *goslot.SlotMachine) bool {
 }
 
 func (m *Model) IsInvalid(machine *goslot.SlotMachine) bool {
-	Loop: for i := 0; i < m.conf.ColsSize; i++ {
+	for i := 0; i < m.conf.ColsSize; i++ {
+		counter := make([]int, len(m.conf.Symbols))
 		for j := 0; j < m.conf.ReelSize; j++ {
-			if m.conf.Types[machine.Reels()[i][j]] == goslot.WILD {
-				continue Loop
+			counter[machine.Reels()[i][j]]++
+		}
+		for j, count := range counter {
+			if count == 0 {
+				return true
+			}
+			if m.conf.Types[j] == goslot.WILD && count < 2 {
+				return true
 			}
 		}
-		return true
 	}
 	return false
 }
@@ -162,12 +168,12 @@ var paytable = [][]int{
 func Start() {
 	conf := &goslot.Conf{
 		ColsSize:                3,
-		ReelSize:                50,
+		ReelSize:                20,
 		RowsSize:                3,
 		NumberOfNodes:           5,
-		LocalPopulationSize:     37,
-		LocalOptimizationEpochs: 100,
-		NumberOfLifeCircle:      67,
+		LocalPopulationSize:     10,
+		LocalOptimizationEpochs: 20,
+		NumberOfLifeCircle:      20,
 		Targets:                 []float64{0.9, 0.001},
 		Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "WILD"},
 		Types: []goslot.SymbolType{goslot.REGULAR, goslot.REGULAR,
