@@ -1,8 +1,10 @@
 package classic
 
 import (
+	"../../goslot"
 	"fmt"
-	"github.com/dangnguyendota/goslot"
+	"math"
+	"math/rand"
 	"time"
 )
 
@@ -125,9 +127,6 @@ func (m *Model) Bonus(machine *goslot.SlotMachine) int {
 // RTP, Jackpot
 func (m *Model) Result(machine *goslot.SlotMachine) []float64 {
 	result := make([]float64, 2)
-	if m.IsInvalid(machine) {
-		return []float64{goslot.InvalidReelsPenalty, goslot.InvalidReelsPenalty}
-	}
 	result[0] += float64(m.Win(machine)) / float64(len(m.paylines))
 	if m.Jackpot(machine) {
 		result[1] += 1
@@ -165,22 +164,23 @@ var paytable = [][]int{
 	{1000, 300, 100, 50, 20, 10, 5, 0},
 }
 
+var conf = &goslot.Conf{
+	ColsSize:                3,
+	ReelSize:                40,
+	RowsSize:                3,
+	NumberOfNodes:           5,
+	LocalPopulationSize:     10,
+	LocalOptimizationEpochs: 20,
+	NumberOfLifeCircle:      20,
+	Targets:                 []float64{0.8, 0.00001},
+	Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "WILD"},
+	Types: []goslot.SymbolType{goslot.REGULAR, goslot.REGULAR,
+		goslot.REGULAR, goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
+		goslot.REGULAR, goslot.WILD},
+	OutputFile:                 fmt.Sprintf("model-classic-%s.txt", now()),
+}
+
 func Start() {
-	conf := &goslot.Conf{
-		ColsSize:                3,
-		ReelSize:                20,
-		RowsSize:                3,
-		NumberOfNodes:           5,
-		LocalPopulationSize:     10,
-		LocalOptimizationEpochs: 20,
-		NumberOfLifeCircle:      20,
-		Targets:                 []float64{0.9, 0.001},
-		Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "WILD"},
-		Types: []goslot.SymbolType{goslot.REGULAR, goslot.REGULAR,
-			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
-			goslot.REGULAR, goslot.WILD},
-		OutputFile:                 fmt.Sprintf("model-classic-%s.txt", now()),
-	}
 	conf.Validate()
 	model := NewModel(conf, paylines, paytable)
 	gen := goslot.NewGenerator(conf, model)
@@ -189,6 +189,58 @@ func Start() {
 	if err := gen.WriteFile(data); err != nil {
 		panic(err)
 	}
+}
+
+func Gen() {
+	rand.Seed(time.Now().UnixNano())
+	conf.Validate()
+	model := NewModel(conf, paylines, paytable)
+	for {
+		machine := goslot.NewMachine(conf, model)
+		ga := goslot.NewGeneticAlgorithm(conf)
+		ga.RandomReels(machine)
+		m := machine.Compute(ga.GetRandomChromosome().Reels())
+		var sum float64
+		var jackpot float64
+		var counter = 0
+		var max float64
+		list := []int64{}
+		for key, value := range m {
+			if value[0] > 1 {
+				counter++
+			}
+			if value[0] > 1 && rand.Intn(30) != 0 {
+				continue
+			}
+			if value[1] > 0 && rand.Intn(100) != 0 {
+				continue
+			}
+			if value[0] > max {
+				max = value[0]
+			}
+			sum += value[0]
+			jackpot += value[1]
+			list = append(list, key)
+		}
+		sum = sum / float64(len(m))
+		jackpot = jackpot / float64(len(m))
+		eps1 := math.Abs(conf.Targets[0] - sum)
+		eps2 := math.Abs(conf.Targets[1] - jackpot)
+		if eps1 <= 0.01 {
+			println(goslot.ChromosomeString(ga.GetRandomChromosome(), conf.Symbols))
+			println(fmt.Sprintf("%f", machine.Evaluate(ga.GetRandomChromosome().Reels())))
+			println(fmt.Sprintf("tỉ lệ ăn: %f", sum))
+			println(fmt.Sprintf("tỉ lệ ăn jackpot: %f", jackpot))
+			println(fmt.Sprintf("số case ăn lớn hơn 1: %d, số case tổng: %d", counter, len(m)))
+			println(fmt.Sprintf("ăn lớn nhất: %f",  max))
+			println(fmt.Sprintf("eps: %f %f", eps1, eps2))
+			println(fmt.Sprintf("size: %d", len(list)))
+			if  eps2 <= 0.00001 && len(list) > 30000 {
+				break
+			}
+		}
+	}
+
 }
 
 func now() string {
