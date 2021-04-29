@@ -2,9 +2,12 @@ package classic
 
 import (
 	"../../goslot"
+	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"math"
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -87,7 +90,8 @@ func (m *Model) Win(machine *goslot.SlotMachine) int {
 }
 
 func (m *Model) Jackpot(machine *goslot.SlotMachine) bool {
-	Loop: for _, payLine := range m.paylines {
+Loop:
+	for _, payLine := range m.paylines {
 		for i := 0; i < m.conf.ColsSize; i++ {
 			if m.conf.Types[machine.Reels()[i][(machine.Stops()[i]+payLine[i])%m.conf.ReelSize]] != goslot.WILD {
 				continue Loop
@@ -172,12 +176,12 @@ var conf = &goslot.Conf{
 	LocalPopulationSize:     10,
 	LocalOptimizationEpochs: 20,
 	NumberOfLifeCircle:      20,
-	Targets:                 []float64{0.8, 0.00001},
+	Targets:                 []float64{0.9, 0.00001},
 	Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "WILD"},
 	Types: []goslot.SymbolType{goslot.REGULAR, goslot.REGULAR,
 		goslot.REGULAR, goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
 		goslot.REGULAR, goslot.WILD},
-	OutputFile:                 fmt.Sprintf("model-classic-%s.txt", now()),
+	OutputFile: fmt.Sprintf("model-classic-%s.txt", now()),
 }
 
 func Start() {
@@ -191,56 +195,107 @@ func Start() {
 	}
 }
 
+type Result struct {
+	Id       uuid.UUID `json:"id"`
+	RTP      float64   `json:"rtp"`
+	Jackpot  float64   `json:"jackpot"`
+	Bound    float64   `json:"bound"`
+	ReelSize int       `json:"reel_size"`
+	Code     string    `json:"code"`
+	List     []int64   `json:"list"`
+	Blocked  []int64   `json:"blocked"`
+}
+
 func Gen() {
 	rand.Seed(time.Now().UnixNano())
 	conf.Validate()
 	model := NewModel(conf, paylines, paytable)
+	tried := 0
 	for {
+		tried++
+		println(fmt.Sprintf("tried : %d", tried))
+		var bound float64 = 5
 		machine := goslot.NewMachine(conf, model)
 		ga := goslot.NewGeneticAlgorithm(conf)
-		ga.RandomReels(machine)
+		ga.RandomReels(machine, true)
 		m := machine.Compute(ga.GetRandomChromosome().Reels())
-		var sum float64
+		var rtp float64
 		var jackpot float64
 		var counter = 0
+		var zeroCounter = 0
+		var oneCounter = 0
 		var max float64
 		list := []int64{}
+		blocked := []int64{}
 		for key, value := range m {
-			if value[0] > 1 {
-				counter++
-			}
-			if value[0] > 1 && rand.Intn(30) != 0 {
+			if value[0] > bound && rand.Intn(100) != 0 {
 				continue
 			}
 			if value[1] > 0 && rand.Intn(100) != 0 {
+				if value[0] <= bound {
+					blocked = append(blocked, key)
+				}
 				continue
+			}
+			if value[0] > bound {
+				list = append(list, key)
 			}
 			if value[0] > max {
 				max = value[0]
 			}
-			sum += value[0]
+			if value[0] > 1 {
+				oneCounter++
+			}
+			if value[0] == 0 {
+				zeroCounter++
+			}
+			rtp += value[0]
 			jackpot += value[1]
-			list = append(list, key)
+			counter++
 		}
-		sum = sum / float64(len(m))
-		jackpot = jackpot / float64(len(m))
-		eps1 := math.Abs(conf.Targets[0] - sum)
+		rtp = rtp / float64(counter)
+		jackpot = jackpot / float64(counter)
+		if jackpot == 0 {
+			continue
+		}
+		eps1 := math.Abs(conf.Targets[0] - rtp)
 		eps2 := math.Abs(conf.Targets[1] - jackpot)
 		if eps1 <= 0.01 {
 			println(goslot.ChromosomeString(ga.GetRandomChromosome(), conf.Symbols))
 			println(fmt.Sprintf("%f", machine.Evaluate(ga.GetRandomChromosome().Reels())))
-			println(fmt.Sprintf("tỉ lệ ăn: %f", sum))
-			println(fmt.Sprintf("tỉ lệ ăn jackpot: %f", jackpot))
-			println(fmt.Sprintf("số case ăn lớn hơn 1: %d, số case tổng: %d", counter, len(m)))
-			println(fmt.Sprintf("ăn lớn nhất: %f",  max))
+			println(fmt.Sprintf("tỉ lệ ăn (RTP): %f", rtp))
+			println(fmt.Sprintf("tỉ lệ ăn jackpot (Jackpot): %f", jackpot))
+			println(fmt.Sprintf("số case chọn ra: %d", counter))
+			println(fmt.Sprintf("số case tổng: %d", len(m)))
+			println(fmt.Sprintf("ăn lớn nhất: %f", max))
 			println(fmt.Sprintf("eps: %f %f", eps1, eps2))
-			println(fmt.Sprintf("size: %d", len(list)))
-			if  eps2 <= 0.00001 && len(list) > 30000 {
+			println(fmt.Sprintf("list: %d", len(list)))
+			println(fmt.Sprintf("blocked: %d", len(blocked)))
+			println(fmt.Sprintf("zero: %d", zeroCounter))
+			println(fmt.Sprintf("one: %d", oneCounter))
+			if eps2 <= 0.00003 {
+				result := &Result{
+					Id:       uuid.New(),
+					RTP:      rtp,
+					Jackpot:  jackpot,
+					Bound:    bound,
+					ReelSize: conf.ReelSize,
+					Code:     ga.GetRandomChromosome().Code(conf.Symbols),
+					List:     list,
+					Blocked:  blocked,
+				}
+				s, err := json.Marshal(result)
+				if err != nil {
+					panic(err)
+				}
+				filename := "/home/dangnguyendota/Desktop/backup/code/skmer/skmer-server/skmer-slots/result/classic-" + result.Id.String() + ".json"
+				if err := WriteFile(filename, s); err != nil {
+					panic(err)
+				}
 				break
 			}
 		}
 	}
-
 }
 
 func now() string {
@@ -248,4 +303,16 @@ func now() string {
 	return fmt.Sprintf("%d-%02d-%02d %02d-%02d-%02d",
 		t.Year(), t.Month(), t.Day(),
 		t.Hour(), t.Minute(), t.Second())
+}
+
+func WriteFile(filename string, data []byte) error {
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(data)
+	if err1 := f.Close(); err == nil {
+		err = err1
+	}
+	return err
 }

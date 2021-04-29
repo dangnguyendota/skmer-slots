@@ -1,8 +1,13 @@
 package football
 
 import (
+	"../../goslot"
+	"encoding/json"
 	"fmt"
-	"github.com/dangnguyendota/goslot"
+	"github.com/google/uuid"
+	"math"
+	"math/rand"
+	"os"
 	"time"
 )
 
@@ -10,10 +15,9 @@ type Model struct {
 	conf     *goslot.Conf
 	paylines [][]int
 	paytable [][]int
-	wild     []int
 }
 
-func NewModel(conf *goslot.Conf, paylines [][]int, paytable [][]int, wild []int) *Model {
+func NewModel(conf *goslot.Conf, paylines [][]int, paytable [][]int) *Model {
 	if paylines == nil || len(paylines) == 0 {
 		panic("invalid pay table")
 	}
@@ -42,7 +46,6 @@ func NewModel(conf *goslot.Conf, paylines [][]int, paytable [][]int, wild []int)
 		conf:     conf,
 		paylines: paylines,
 		paytable: paytable,
-		wild:     wild,
 	}
 }
 
@@ -65,11 +68,9 @@ func (m *Model) Win(machine *goslot.SlotMachine) int {
 		}
 
 		// thay tất cả các WILD thành biểu tượng tìm được
-		wild := 0
 		for i := 0; i < len(line); i++ {
 			if m.conf.Types[line[i]] == goslot.WILD {
 				line[i] = symbol
-				wild++
 			}
 		}
 
@@ -84,7 +85,6 @@ func (m *Model) Win(machine *goslot.SlotMachine) int {
 		}
 		// tính tiền số lượng symbol đó
 		win += m.paytable[counter][symbol]
-		win += m.wild[wild]
 	}
 	return win
 }
@@ -108,7 +108,7 @@ func (m *Model) Scatters(machine *goslot.SlotMachine) int {
 
 func (m *Model) Bonus(machine *goslot.SlotMachine) int {
 	counter := 0
-	for i := 0; i < len(machine.Reels()); i++ {
+	for i := 0; i < m.conf.ColsSize; i++ {
 		for j := 0; j < m.conf.RowsSize; j++ {
 			if m.conf.Types[machine.Reels()[i][(machine.Stops()[i]+j)%len(machine.Reels()[i])]] == goslot.BONUS {
 				counter++
@@ -138,11 +138,7 @@ func (m *Model) IsInvalid(machine *goslot.SlotMachine) bool {
 
 // RTP, Jackpot, 3 Free spins, 4 Free Spins, 5 Free spins
 func (m *Model) Result(machine *goslot.SlotMachine) []float64 {
-	if m.IsInvalid(machine) {
-		return []float64{goslot.InvalidReelsPenalty, goslot.InvalidReelsPenalty,
-			goslot.InvalidReelsPenalty, goslot.InvalidReelsPenalty, goslot.InvalidReelsPenalty}
-	}
-	result := make([]float64, 5)
+	result := make([]float64, 3)
 	result[0] += float64(m.Win(machine)) / float64(len(m.paylines))
 	if m.Jackpot(machine) {
 		result[1] += 1
@@ -153,11 +149,11 @@ func (m *Model) Result(machine *goslot.SlotMachine) []float64 {
 	case 1:
 	case 2:
 	case 3:
-		result[2]++
+		result[2] += 10
 	case 4:
-		result[3]++
+		result[2] += 15
 	case 5:
-		result[4]++
+		result[2] += 25
 	default:
 		// nếu nhiều hơn 5 bonus trên 1 màn hình thì penalty
 		result[0] += goslot.InvalidReelsPenalty
@@ -194,42 +190,149 @@ var paylines = [][]int{
 }
 
 var paytable = [][]int{
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{15, 10, 10, 7, 7, 6, 5, 5, 0, 0},
-	{30, 20, 20, 15, 15, 12, 10, 10, 0, 0},
-	{75, 50, 50, 25, 25, 20, 15, 15, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{15, 10, 10, 7, 7, 6, 5, 5, 0},
+	{30, 20, 20, 15, 15, 12, 10, 10, 0},
+	{75, 50, 50, 25, 25, 20, 15, 15, 0},
 }
 
-// tiền thưởng khi ăn [0, 1, 2, 3, 4, 5] WILD trên 1 pay line
-var wild = []int{0, 0, 0, 25, 40, 0}
+var conf = &goslot.Conf{
+	ColsSize:                5,
+	ReelSize:                20,
+	RowsSize:                3,
+	NumberOfNodes:           5,
+	LocalPopulationSize:     10,
+	LocalOptimizationEpochs: 20,
+	NumberOfLifeCircle:      11,
+	Targets:                 []float64{0.7, 0.00001, 0.02, 0.01, 0.005},
+	Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "H", "WILD"},
+	Types: []goslot.SymbolType{
+		goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
+		goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
+		goslot.REGULAR, goslot.REGULAR, goslot.WILD},
+	OutputFile: fmt.Sprintf("model-football-%s.txt", now()),
+}
 
 func Start() {
-	conf := &goslot.Conf{
-		ColsSize:                5,
-		ReelSize:                20,
-		RowsSize:                3,
-		NumberOfNodes:           5,
-		LocalPopulationSize:     10,
-		LocalOptimizationEpochs: 20,
-		NumberOfLifeCircle:      11,
-		Targets:                 []float64{0.7, 0.0001, 0.02, 0.01, 0.005},
-		Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "H", "WILD", "FREE SPIN"},
-		Types: []goslot.SymbolType{
-			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
-			goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
-			goslot.REGULAR, goslot.REGULAR, goslot.WILD, goslot.BONUS},
-		OutputFile: fmt.Sprintf("model-football-%s.txt", now()),
-	}
 	conf.Validate()
-	model := NewModel(conf, paylines, paytable, wild)
+	model := NewModel(conf, paylines, paytable)
 	gen := goslot.NewGenerator(conf, model)
 	gen.Start()
 	data := []byte(goslot.ChromosomeString(gen.GetBestChromosome(), conf.Symbols))
 	if err := gen.WriteFile(data); err != nil {
 		panic(err)
 	}
+}
+
+type Result struct {
+	Id       uuid.UUID `json:"id"`
+	RTP      float64   `json:"rtp"`
+	Jackpot  float64   `json:"jackpot"`
+	Bound    float64   `json:"bound"`
+	ReelSize int       `json:"reel_size"`
+	Code     string    `json:"code"`
+	List     []int64   `json:"list"`
+	Blocked  []int64   `json:"blocked"`
+}
+
+func Gen() {
+	rand.Seed(time.Now().UnixNano())
+	conf.Validate()
+	model := NewModel(conf, paylines, paytable)
+	for {
+		var bound float64 = 100
+		machine := goslot.NewMachine(conf, model)
+		ga := goslot.NewGeneticAlgorithm(conf)
+		ga.RandomReels(machine, false)
+		m := machine.Compute(ga.GetRandomChromosome().Reels())
+		var rtp float64
+		var jackpot float64
+		var freespins float64
+
+		var counter = 0
+		var zeroCounter = 0
+		var oneCounter = 0
+		var max float64
+		list := []int64{}
+		blocked := []int64{}
+		for _, value := range m {
+			if value[0] > bound {
+				continue
+			}
+			if value[0] > max {
+				max = value[0]
+			}
+			if value[0] > 1 {
+				oneCounter++
+			}
+			if value[0] == 0 {
+				zeroCounter++
+			}
+			rtp += value[0]
+			jackpot += value[1]
+			freespins += value[2]
+			counter++
+		}
+		rtp = rtp / float64(counter)
+		jackpot = jackpot / float64(counter)
+		freespins = freespins / float64(counter)
+		if jackpot == 0 {
+			continue
+		}
+		//if freespins == 0 {
+		//	continue
+		//}
+		eps1 := math.Abs(conf.Targets[0] - rtp)
+		eps2 := math.Abs(conf.Targets[1] - jackpot)
+
+		println(goslot.ChromosomeString(ga.GetRandomChromosome(), conf.Symbols))
+		//println(fmt.Sprintf("%f", machine.Evaluate(ga.GetRandomChromosome().Reels())))
+		println(fmt.Sprintf("tỉ lệ ăn (RTP): %f", rtp))
+		println(fmt.Sprintf("tỉ lệ ăn jackpot (Jackpot): %f", jackpot))
+		println(fmt.Sprintf("tỉ lệ ăn free spins: %f", freespins))
+		println(fmt.Sprintf("số case tổng: %d", len(m)))
+		println(fmt.Sprintf("số case lấy ra: %d ", counter))
+		println(fmt.Sprintf("ăn lớn nhất: %f", max))
+		println(fmt.Sprintf("eps: %f %f", eps1, eps2))
+		println(fmt.Sprintf("size: %d", len(list)))
+		println(fmt.Sprintf("blocked: %d", len(blocked)))
+		println(fmt.Sprintf("zero: %d", zeroCounter))
+		println(fmt.Sprintf("one: %d", oneCounter))
+		if eps1 <= 0.2 && eps2 <= 0.00009 {
+			result := &Result{
+				Id:      uuid.New(),
+				RTP:     rtp,
+				Jackpot: jackpot,
+				Bound:   bound,
+				Code:    ga.GetRandomChromosome().Code(conf.Symbols),
+				List:    list,
+				Blocked: blocked,
+			}
+			s, err := json.Marshal(result)
+			if err != nil {
+				panic(err)
+			}
+			filename := "/home/dangnguyendota/Desktop/backup/code/skmer/skmer-server/skmer-slots/result/football-" + result.Id.String() + ".json"
+			if err := WriteFile(filename, s); err != nil {
+				panic(err)
+			}
+			break
+		}
+	}
+}
+
+func WriteFile(filename string, data []byte) error {
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(data)
+	if err1 := f.Close(); err == nil {
+		err = err1
+	}
+	return err
 }
 
 func now() string {
