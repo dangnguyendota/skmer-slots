@@ -1,4 +1,4 @@
-package football
+package carnival
 
 import (
 	"../../goslot"
@@ -165,37 +165,62 @@ var paylines = [][]int{
 	{0, 0, 0, 0, 0},
 	{1, 1, 1, 1, 1},
 	{2, 2, 2, 2, 2},
-	{1, 2, 2, 2, 1},
-	{1, 0, 1, 2, 1},
+	{0, 0, 1, 2, 2},
+	{1, 2, 1, 2, 1},
 	{0, 0, 2, 0, 0},
 	{2, 2, 0, 2, 2},
 	{0, 1, 2, 1, 0},
-	{0, 1, 1, 1, 0},
-	{0, 1, 0, 1, 0},
+	{2, 2, 1, 0, 0},
+	{2, 1, 2, 1, 2},
 	{0, 2, 2, 2, 0},
 	{2, 0, 0, 0, 2},
 	{2, 1, 0, 1, 2},
-	{0, 0, 1, 2, 2},
-	{2, 1, 2, 1, 2},
-	{1, 2, 0, 2, 1},
-	{2, 1, 1, 1, 2},
 	{1, 2, 1, 0, 1},
+	{1, 0, 1, 0, 1},
+	{1, 2, 0, 2, 1},
+	{1, 0, 0, 0, 1},
+	{2, 1, 1, 1, 2},
+	{1, 0, 1, 2, 1},
+	{1, 1, 0, 1, 1},
+	{1, 0, 2, 0, 1},
+	{0, 1, 1, 1, 0},
+	{1, 2, 2, 2, 1},
+	{0, 1, 0, 1, 0},
 	{1, 1, 2, 1, 1},
 	{0, 2, 0, 2, 0},
 	{2, 0, 2, 0, 2},
-	{1, 0, 0, 0, 1},
-	{2, 2, 1, 0, 0},
-	{1, 1, 0, 1, 1},
-	{1, 0, 2, 0, 1},
+	{2, 0, 1, 2, 0},
+	{0, 1, 2, 2, 1},
+	{2, 1, 2, 1, 0},
+	{0, 0, 0, 0, 2},
+	{2, 2, 2, 2, 0},
+	{0, 2, 1, 0, 2},
+	{0, 0, 2, 2, 2},
+	{2, 2, 0, 0, 0},
+	{1, 2, 2, 0, 0},
+	{0, 1, 2, 2, 2},
+	{0, 2, 1, 2, 0},
+	{1, 0, 2, 1, 2},
+	{0, 0, 1, 1, 2},
+	{2, 1, 0, 0, 0},
+	{2, 0, 1, 0, 2},
+	{1, 2, 0, 1, 0},
+	{2, 2, 1, 1, 0},
+	{0, 1, 1, 1, 1},
+	{2, 1, 0, 0, 2},
+	{0, 1, 0, 1, 2},
+	{0, 2, 2, 2, 2},
+	{2, 0, 0, 0, 0},
+	{2, 1, 1, 1, 1},
 }
 
 var paytable = [][]int{
-	{0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{15, 10, 10, 7, 7, 6, 5, 5, 0},
-	{30, 20, 20, 15, 15, 12, 10, 10, 0},
-	{75, 50, 50, 25, 25, 20, 15, 15, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{20, 15, 12, 10, 8, 6, 5, 5, 0, 0},
+	{80, 40, 30, 25, 20, 15, 10, 10, 0, 0},
+	{200, 150, 125, 100, 80, 60, 50, 50, 0, 0},
 }
 
 var conf = &goslot.Conf{
@@ -206,12 +231,12 @@ var conf = &goslot.Conf{
 	LocalPopulationSize:     10,
 	LocalOptimizationEpochs: 20,
 	NumberOfLifeCircle:      11,
-	Targets:                 []float64{0.9, 0.00001, 0.02, 0.01, 0.005},
-	Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "H", "WILD"},
+	Targets:                 []float64{0.5, 0.00001, 0.002, 0.001, 0.0005},
+	Symbols:                 []string{"A", "B", "C", "D", "E", "F", "G", "H", "WILD", "FREESPIN"},
 	Types: []goslot.SymbolType{
 		goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
 		goslot.REGULAR, goslot.REGULAR, goslot.REGULAR,
-		goslot.REGULAR, goslot.REGULAR, goslot.WILD},
+		goslot.REGULAR, goslot.REGULAR, goslot.WILD, goslot.BONUS},
 	OutputFile: fmt.Sprintf("model-football-%s.txt", now()),
 }
 
@@ -230,6 +255,7 @@ type Result struct {
 	Id       uuid.UUID `json:"id"`
 	RTP      float64   `json:"rtp"`
 	Jackpot  float64   `json:"jackpot"`
+	FreeSpin float64 `json:"free_spin"`
 	Bound    float64   `json:"bound"`
 	ReelSize int       `json:"reel_size"`
 	Code     string    `json:"code"`
@@ -267,6 +293,10 @@ func Gen() {
 				}
 				continue
 			}
+			//if value[2] > 0 && rand.Intn(100) != 0 {
+			//	blocked = append(blocked, key)
+			//	continue
+			//}
 			if value[0] > max {
 				max = value[0]
 			}
@@ -287,9 +317,9 @@ func Gen() {
 		if jackpot == 0 {
 			continue
 		}
-		//if freespins == 0 {
-		//	continue
-		//}
+		if freespins == 0 {
+			continue
+		}
 		eps1 := math.Abs(conf.Targets[0] - rtp)
 		eps2 := math.Abs(conf.Targets[1] - jackpot)
 
@@ -306,24 +336,30 @@ func Gen() {
 		println(fmt.Sprintf("blocked: %d", len(blocked)))
 		println(fmt.Sprintf("zero: %d", zeroCounter))
 		println(fmt.Sprintf("one: %d", oneCounter))
-		if eps1 <= 0.01 && eps2 <= 0.00003 {
-			result := &Result{
-				Id:      uuid.New(),
-				RTP:     rtp,
-				Jackpot: jackpot,
-				Bound:   bound,
-				Code:    ga.GetRandomChromosome().Code(conf.Symbols),
-				List:    list,
-				Blocked: blocked,
-			}
-			s, err := json.Marshal(result)
-			if err != nil {
-				panic(err)
-			}
-			filename := "/home/dangnguyendota/Desktop/backup/code/skmer/skmer-server/skmer-slots/result/football-" + result.Id.String() + ".json"
-			if err := WriteFile(filename, s); err != nil {
-				panic(err)
-			}
+		if rtp > 0.9 {
+			continue
+		}
+		result := &Result{
+			Id:       uuid.New(),
+			RTP:      rtp,
+			Jackpot:  jackpot,
+			FreeSpin: freespins,
+			Bound:    bound,
+			ReelSize: conf.ReelSize,
+			Code:     ga.GetRandomChromosome().Code(conf.Symbols),
+			List:     list,
+			Blocked:  blocked,
+		}
+		s, err := json.Marshal(result)
+		if err != nil {
+			panic(err)
+		}
+		filename := "/home/dangnguyendota/Desktop/backup/code/skmer/skmer-server/skmer-slots/result/carnival-" + result.Id.String() + ".json"
+		println(fmt.Sprintf("file name: %s", filename))
+		if err := WriteFile(filename, s); err != nil {
+			panic(err)
+		}
+		if eps1 <= 0.01 && eps2 <= 0.00003 && freespins < 0.01{
 			break
 		}
 	}

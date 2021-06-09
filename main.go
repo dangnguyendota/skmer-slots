@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./chinese_carnival"
+	"./carnival"
 	"./classic"
 	"./football"
 	"flag"
@@ -16,11 +16,11 @@ func main() {
 	if *cs {
 		classic.Start()
 	} else if *cc {
-		chinese_carnival.Start()
+		carnival.Start()
 	} else if *fb {
 		football.Start()
 	} else {
-		football.Gen()
+		carnival.Gen()
 	}
 
 }
