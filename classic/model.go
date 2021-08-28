@@ -211,6 +211,7 @@ func Gen() {
 	conf.Validate()
 	model := NewModel(conf, paylines, paytable)
 	tried := 0
+	mapCount := 0
 	for {
 		tried++
 		println(fmt.Sprintf("tried : %d", tried))
@@ -260,7 +261,7 @@ func Gen() {
 		}
 		eps1 := math.Abs(conf.Targets[0] - rtp)
 		eps2 := math.Abs(conf.Targets[1] - jackpot)
-		if eps1 <= 0.01 {
+		if rtp < 0.9 && rtp > 0.6 {
 			println(goslot.ChromosomeString(ga.GetRandomChromosome(), conf.Symbols))
 			println(fmt.Sprintf("%f", machine.Evaluate(ga.GetRandomChromosome().Reels())))
 			println(fmt.Sprintf("tỉ lệ ăn (RTP): %f", rtp))
@@ -273,7 +274,7 @@ func Gen() {
 			println(fmt.Sprintf("blocked: %d", len(blocked)))
 			println(fmt.Sprintf("zero: %d", zeroCounter))
 			println(fmt.Sprintf("one: %d", oneCounter))
-			if eps2 <= 0.00003 {
+			if jackpot <= 0.0001 {
 				result := &Result{
 					Id:       uuid.New(),
 					RTP:      rtp,
@@ -292,7 +293,10 @@ func Gen() {
 				if err := WriteFile(filename, s); err != nil {
 					panic(err)
 				}
-				break
+				mapCount++;
+				if mapCount == 5 {
+					break
+				}
 			}
 		}
 	}

@@ -116,7 +116,7 @@ func (r MiniPokerReels) isJDubs() bool {
 
 // true nếu đôi nhỏ hơn 10
 func (r MiniPokerReels) isTenDubs() bool {
-	if d := r.getDubs(); d != - 1 && d <= Ten {
+	if d := r.getDubs(); d != -1 && d <= Ten {
 		return true
 	}
 	return false
@@ -228,14 +228,13 @@ func startMinipoker() {
 	println(fmt.Sprintf("1 Đôi >= J: %d, tỉ lệ ăn: %f%%", jDubsCount, float64(jDubsCount*100)/total))
 	println(fmt.Sprintf("1 Đôi <= 10: %d, tỉ lệ ăn: %f%%", tenDubsCount, float64(tenDubsCount*100)/total))
 	println(fmt.Sprintf("Tổng trường hợp: %d", int64(total)))
-	println(fmt.Sprintf("Xác xuất ăn: %f%%", (
-		float64(straightFlushCount*(conf.StraightFlush)+
-			quadsCount*(conf.Quads)+
-			tripsAndDubsCount*(conf.TripsAndDubs)+
-			flushCount*(conf.Flush)+
-			sequenceCount*(conf.Sequence)+
-			tripsCount*(conf.Trips)+
-			doubleDubsCount*(conf.DoubleDubs))+
-			float64(jDubsCount)*(conf.JDubs)+
-			float64(tenDubsCount)*(conf.TenDubs))*100/(total-total*conf.JackpotHouseEdge)))
+	println(fmt.Sprintf("Xác xuất ăn: %f%%", (float64(straightFlushCount*(conf.StraightFlush)+
+		quadsCount*(conf.Quads)+
+		tripsAndDubsCount*(conf.TripsAndDubs)+
+		flushCount*(conf.Flush)+
+		sequenceCount*(conf.Sequence)+
+		tripsCount*(conf.Trips)+
+		doubleDubsCount*(conf.DoubleDubs))+
+		float64(jDubsCount)*(conf.JDubs)+
+		float64(tenDubsCount)*(conf.TenDubs))*100/(total-total*conf.JackpotHouseEdge)))
 }

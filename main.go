@@ -14,13 +14,12 @@ var fb = flag.Bool("football", false, "")
 func main() {
 	flag.Parse()
 	if *cs {
-		classic.Start()
+		classic.Gen()
 	} else if *cc {
-		carnival.Start()
+		carnival.Gen()
 	} else if *fb {
-		football.Start()
+		football.Gen()
 	} else {
 		carnival.Gen()
 	}
-
 }

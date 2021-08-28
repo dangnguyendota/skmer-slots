@@ -255,7 +255,7 @@ type Result struct {
 	Id       uuid.UUID `json:"id"`
 	RTP      float64   `json:"rtp"`
 	Jackpot  float64   `json:"jackpot"`
-	FreeSpin float64 `json:"free_spin"`
+	FreeSpin float64   `json:"free_spin"`
 	Bound    float64   `json:"bound"`
 	ReelSize int       `json:"reel_size"`
 	Code     string    `json:"code"`
@@ -359,7 +359,7 @@ func Gen() {
 		if err := WriteFile(filename, s); err != nil {
 			panic(err)
 		}
-		if eps1 <= 0.01 && eps2 <= 0.00003 && freespins < 0.01{
+		if eps1 <= 0.01 && eps2 <= 0.00003 && freespins < 0.01 {
 			break
 		}
 	}

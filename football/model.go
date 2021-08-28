@@ -306,7 +306,8 @@ func Gen() {
 		println(fmt.Sprintf("blocked: %d", len(blocked)))
 		println(fmt.Sprintf("zero: %d", zeroCounter))
 		println(fmt.Sprintf("one: %d", oneCounter))
-		if eps1 <= 0.01 && eps2 <= 0.00003 {
+		println(rtp <= 0.9 && jackpot <= 0.0001)
+		if rtp <= 0.9 && jackpot <= 0.0001 {
 			result := &Result{
 				Id:      uuid.New(),
 				RTP:     rtp,
@@ -324,7 +325,7 @@ func Gen() {
 			if err := WriteFile(filename, s); err != nil {
 				panic(err)
 			}
-			break
+			println("write to file")
 		}
 	}
 }
